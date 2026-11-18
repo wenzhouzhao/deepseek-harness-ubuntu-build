@@ -151,7 +151,14 @@ mkdir -p "$REPO_ROOT/dist"
 DIST_DEB="$REPO_ROOT/dist/$(basename "$DEB")"
 cp -f "$DEB" "$DIST_DEB"
 ls -lh "$DIST_DEB"
-sha256sum "$DIST_DEB"
+(cd "$REPO_ROOT/dist" && sha256sum ./*.deb >SHA256SUMS)
+cat "$REPO_ROOT/dist/SHA256SUMS"
+
+if [ -n "${SIGN_KEY:-}" ]; then
+  bash "$SCRIPT_DIR/sign-artifacts.sh"
+else
+  info "checksum file: dist/SHA256SUMS (set SIGN_KEY=... to add a GPG signature)"
+fi
 
 if [ "$INSTALL" = "0" ]; then
   info "install skipped (--no-install); package: $DIST_DEB"

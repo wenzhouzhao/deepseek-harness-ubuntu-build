@@ -116,6 +116,8 @@ sudo bash scripts/install-deb.sh dist/deepseek-harness-*.deb
 | `scripts/install-deb.sh` | `dpkg -i` + `chown` 当前用户到 `/opt/DeepSeek Harness` |
 | `scripts/restart-dsh.sh` | 结束残留进程并启动新实例（`--no-start` 只停止） |
 | `scripts/sync-upstream.sh` | `--force` 拉取上游最新 master 并重置源码树，然后重建 |
+| `scripts/sign-artifacts.sh` | 生成/签名 `dist/SHA256SUMS`（可选 `--debsigs`） |
+| `scripts/verify-artifacts.sh` | 校验 GPG 签名与包校验和 |
 | `scripts/lib.sh` | 共享函数（源码解析、校验、路径） |
 
 常用环境变量：
@@ -129,6 +131,7 @@ sudo bash scripts/install-deb.sh dist/deepseek-harness-*.deb
 | `SKIP_BUILD=1` | 复用已编译产物，只重新打包 |
 | `DEFER_RUNTIME_SMOKE=0` | 运行上游 smoke（Linux 上会失败，见上） |
 | `DSH_REF` | `sync-upstream.sh` 拉取的分支/标签（默认 `master`） |
+| `SIGN_KEY` | GPG 密钥 ID/邮箱；设置后构建完自动签名校验和文件 |
 
 ---
 
@@ -174,7 +177,41 @@ sudo dpkg -i /path/to/old/deepseek-harness-0.2.1-rc.3-linux-amd64-unsigned.deb
 
 ---
 
-## 7. 更新上游
+## 7. 签名与校验
+
+默认产物未签名，但每次构建都会生成 `dist/SHA256SUMS`。需要证明来源时，用 GPG
+签这个校验和文件：
+
+```sh
+# 一次性准备
+gpg --full-generate-key
+gpg --armor --export <KEY_ID> > packager-public-key.asc
+
+# 构建时自动签名；或对已有 dist/ 补签
+SIGN_KEY=<KEY_ID> bash scripts/build-deb.sh
+bash scripts/sign-artifacts.sh --key <KEY_ID>
+
+# 用户校验（先导入公钥）
+gpg --import packager-public-key.asc
+bash scripts/verify-artifacts.sh
+```
+
+产物：
+
+```
+dist/SHA256SUMS
+dist/SHA256SUMS.asc
+```
+
+- 签名只证明“包由该密钥持有者打包”，**不证明** DeepSeek 官方发布
+- `dpkg -i` 不校验 `.deb` 签名；需要包内签名可加 `--debsigs`
+  （依赖 `debsigs`，仍不会被 dpkg 强制校验）
+- 要让 `apt install` 自动校验，需要签名 APT 仓库的 `Release/InRelease`
+- 完整方案、密钥管理和威胁模型见 [docs/SIGNING.md](docs/SIGNING.md)
+
+---
+
+## 8. 更新上游
 
 ```sh
 # 警告：会丢弃 DSH_SRC 中的本地修改，请使用专门用于打包的 checkout
@@ -195,7 +232,7 @@ git -C "$DSH_SRC" diff > patches/linux-x64-support.patch
 
 ---
 
-## 8. 验证
+## 9. 验证
 
 1. `dpkg-query` 版本正确
 2. `dsh --version` 正确
@@ -212,7 +249,7 @@ git -C "$DSH_SRC" diff > patches/linux-x64-support.patch
 
 ---
 
-## 9. 目录结构
+## 10. 目录结构
 
 ```
 deepseek-harness-ubuntu-build/
@@ -228,24 +265,27 @@ deepseek-harness-ubuntu-build/
 │   ├── install-deb.sh
 │   ├── restart-dsh.sh
 │   ├── sync-upstream.sh
+│   ├── sign-artifacts.sh
+│   ├── verify-artifacts.sh
 │   └── lib.sh
 ├── plugin-patch/               # 可选：dsh-purge 在 0.2.2-rc.4 上的兼容修正
 │   ├── reapply-plugin-patch.sh
 │   └── dsh-purge-0.2.2-rc.4.patch
 └── docs/
     ├── PATCHES.md
+    ├── SIGNING.md
     └── TROUBLESHOOTING.md
 ```
 
-## 10. 版本记录
+## 11. 版本记录
 
 | 日期 | 上游版本 | 结果 |
 | --- | --- | --- |
 | 2026-10-26 | 0.2.1-rc.3 | 构建并安装成功 |
 | 2026-11-18 | 0.2.2-rc.4 | 构建成功，77/77 宿主补丁验证通过 |
 
-## 11. 注意
+## 12. 注意
 
 - 产物**未签名**，仅供本机安装；不要当作官方发行包分发
-- 上游是 developer preview，接口会变；每次更新后按第 7 节重放补丁并重建
+- 上游是 developer preview，接口会变；每次更新后按第 8 节重放补丁并重建
 - 本仓库不包含上游源码；请遵守上游 MIT 许可与品牌规范，详见 [NOTICE.md](NOTICE.md)
