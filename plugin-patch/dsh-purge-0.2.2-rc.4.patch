@@ -1,0 +1,24 @@
+--- a/lib/patches/engine.mjs
++++ b/lib/patches/engine.mjs
+@@ -262,7 +262,7 @@
+     id: 91, name: "BROWSER_COOKIE_NAME_IGNORE_PORT", layer: "代码", layer_en: "Code",
+     surfaces: ["desktop"],
+     desc: "仅桌面端：会话 cookie 名忽略端口，避免随机端口累积 cookie 撑爆请求头（431）/ cookie name ignores port",
+-    file: "client-connection",
++    file: "host-auth-token",
+     rel: ["lib", "index.js"],
+     replacements: [
+       {
+--- a/lib/core.js
++++ b/lib/core.js
+@@ -2941,6 +2941,10 @@
+       ...nestedPkg(aiBase, "dsh-client-connection", "lib", "index.js"),
+       ...(root ? [path.join(root, "packages", "connection", "client-connection", "lib", "index.js")] : []),
+     ]),
++    // 0.2.2-rc.4 moved the browser-session cookie name into this package.
++    "host-auth-token": firstExisting([
++      ...nestedPkg(aiBase, "dsh-host-authentication-token", "lib", "index.js"),
++    ]),
+     "compaction-instant-client": allExisting([
+       path.join(dshHome, "profiles", "web", "node_modules", "dsh-compaction-instant", "src", "client.js"),
+       path.join(dshHome, "profiles", "web", ".dsh-module-fallback", "node_modules", "dsh-compaction-instant", "src", "client.js"),

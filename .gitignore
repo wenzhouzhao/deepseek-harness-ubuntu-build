@@ -1,0 +1,12 @@
+# build outputs
+dist/
+*.deb
+*.AppImage
+
+# upstream source checkout if placed inside this repository
+deepseek-harness/
+.work/
+
+# local-only files
+.sudo-pass
+*.local
