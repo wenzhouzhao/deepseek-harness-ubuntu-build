@@ -267,3 +267,36 @@ bash plugin-patch/reapply-plugin-patch.sh
 脚本只改已安装插件的补丁表（幂等）。插件自动升级会覆盖这处修改，
 升级后重新执行一次即可。参考 diff：
 `plugin-patch/dsh-purge-0.2.2-rc.4.patch`。
+
+---
+
+## 16. 侧边栏 / Agent Teams 请求 400、WebSocket 握手失败
+
+现象（浏览器控制台，0.2.2-rc.4 + 旧插件）：
+
+```
+/sidebar/api/settings.get         400 (empty body)
+/sidebar/ws/agent-opens           Connection closed before receiving a handshake response
+/plugins/dsh-agent-teams/state    400 (empty body)
+```
+
+原因：0.2.2-rc.2 起 Connection 移除了 `requestRejection`（改用
+`admit`），并且 `webServer.register` / `registerUpgrade` 默认
+`auth: 'required'`。仍调用 `connection.requestRejection(req)` 的插件
+（`dsh-better-sidebar` 0.32.1、`@nanmicoder/dsh-agent-teams` 0.1.31）
+会在 handler 内抛 TypeError，宿主捕获后统一回空 400；WS upgrade 同理。
+
+修复：
+
+```sh
+bash plugin-patch/patch-plugin-auth.sh --check   # 先看是否需要
+bash plugin-patch/patch-plugin-auth.sh           # 幂等，自动备份
+bash scripts/restart-dsh.sh
+```
+
+脚本把两处过期的 fence 改为直接放行。宿主在 handler 之前已完成准入
+（未声明 `auth` 的路由默认要求认证），因此不会放宽访问控制。
+
+- 备份：`*.pre-0.2.2-rc.4.bak`（只创建一次）；`--revert` 还原
+- 重装/升级插件会覆盖修改，重跑脚本即可
+- 上游发布兼容 0.2.2-rc.2+ 的版本后，脚本会检测到锚点不存在并跳过

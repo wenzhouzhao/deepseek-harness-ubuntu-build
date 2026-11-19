@@ -133,6 +133,19 @@ sudo bash scripts/install-deb.sh dist/deepseek-harness-*.deb
 | `DSH_REF` | `sync-upstream.sh` 拉取的分支/标签（默认 `master`） |
 | `SIGN_KEY` | GPG 密钥 ID/邮箱；设置后构建完自动签名校验和文件 |
 
+### 插件兼容修正（可选）
+
+`plugin-patch/` 里是针对已安装社区插件的幂等修正，不参与构建：
+
+| 脚本 | 场景 |
+| --- | --- |
+| `plugin-patch/reapply-plugin-patch.sh` | dsh-purge 补丁 #91 在 0.2.2-rc.4 上漂移 |
+| `plugin-patch/patch-plugin-auth.sh` | dsh-better-sidebar / dsh-agent-teams 仍调用已移除的 `requestRejection`，表现为 400 与 WS 握手失败 |
+
+两个脚本都会改 `~/.dsh/profiles/<name>` 下的已装插件；重装插件后重跑即可，
+`--check` 只报告，`--revert` 还原备份。详见
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) 第 15、16 节。
+
 ---
 
 ## 6. 安装 / 升级 / 回滚
@@ -268,9 +281,10 @@ deepseek-harness-ubuntu-build/
 │   ├── sign-artifacts.sh
 │   ├── verify-artifacts.sh
 │   └── lib.sh
-├── plugin-patch/               # 可选：dsh-purge 在 0.2.2-rc.4 上的兼容修正
+├── plugin-patch/               # 可选：社区插件在 0.2.2-rc.4 上的兼容修正
 │   ├── reapply-plugin-patch.sh
-│   └── dsh-purge-0.2.2-rc.4.patch
+│   ├── dsh-purge-0.2.2-rc.4.patch
+│   └── patch-plugin-auth.sh    # dsh-better-sidebar / dsh-agent-teams 准入 API
 └── docs/
     ├── PATCHES.md
     ├── SIGNING.md
