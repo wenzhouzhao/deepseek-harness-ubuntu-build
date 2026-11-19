@@ -1,7 +1,7 @@
 # Linux 构建补丁说明
 
 补丁文件：`patches/linux-x64-support.patch`
-适用上游：**0.2.2-rc.4**（commit `ca33fd68`）
+适用上游：**0.2.2-rc.5**（commit `9c2670d3`）
 规模：6 个文件，约 29 行新增 / 13 行删除。
 
 目标：让上游 Desktop 打包流程接受 `linux-x64` 目标，并用 electron-builder
@@ -203,4 +203,5 @@ DSH_GATE_CONCURRENCY=4
 | 补丁版本 | 针对上游 | 说明 |
 | --- | --- | --- |
 | 初版 | 0.2.1-rc.3 / `22ddee3` | 首次加入 Linux 构建支持 |
-| 当前 | 0.2.2-rc.4 / `ca33fd68` | `desktopTargetPlatform` 改为 map；适配新增的 `lib/operation-report-worker.js` 等上游变化 |
+| 0.2.2-rc.4 / `ca33fd68` | `desktopTargetPlatform` 改为 map；适配新增的 `lib/operation-report-worker.js` 等上游变化 |
+| 当前 | 0.2.2-rc.5 / `9c2670d3` | 补丁锚点无变化，直接复用 |

@@ -6,8 +6,8 @@
 > 上游只发布 macOS / Windows 桌面包；Linux 桌面版由这里的补丁和脚本在本地构建。
 
 - 目标运行环境：Ubuntu 24.04 x86_64（同类 Debian 系发行版同理）
-- 当前适配：**DeepSeek Harness 0.2.2-rc.4**
-- 历史验证：0.2.1-rc.3
+- 当前适配：**DeepSeek Harness 0.2.2-rc.5**
+- 历史验证：0.2.2-rc.4、0.2.1-rc.3
 - 产物：未签名的 `deepseek-harness-<version>-linux-amd64-unsigned.deb`
 - 本仓库只包含补丁、脚本和文档；不包含上游源码
 
@@ -153,14 +153,14 @@ sudo bash scripts/install-deb.sh dist/deepseek-harness-*.deb
 ### 安装或升级
 
 ```sh
-sudo dpkg -i dist/deepseek-harness-0.2.2-rc.4-linux-amd64-unsigned.deb
+sudo dpkg -i dist/deepseek-harness-0.2.2-rc.5-linux-amd64-unsigned.deb
 sudo chown -R "$(id -u):$(id -g)" "/opt/DeepSeek Harness"
 ```
 
 或直接使用脚本（推荐，包含 chown）：
 
 ```sh
-bash scripts/install-deb.sh dist/deepseek-harness-0.2.2-rc.4-linux-amd64-unsigned.deb
+bash scripts/install-deb.sh dist/deepseek-harness-0.2.2-rc.5-linux-amd64-unsigned.deb
 ```
 
 - 包名固定 `deepseek-harness`，`dpkg -i` 原地升级
@@ -272,7 +272,7 @@ deepseek-harness-ubuntu-build/
 ├── .gitignore
 ├── assets/icons/               # hicolor 图标（16–512），构建时复制到上游
 ├── patches/
-│   └── linux-x64-support.patch # 6 文件补丁（当前适配 0.2.2-rc.4）
+│   └── linux-x64-support.patch # 6 文件补丁（当前适配 0.2.2-rc.5）
 ├── scripts/
 │   ├── build-deb.sh
 │   ├── install-deb.sh
@@ -297,6 +297,7 @@ deepseek-harness-ubuntu-build/
 | --- | --- | --- |
 | 2026-10-26 | 0.2.1-rc.3 | 构建并安装成功 |
 | 2026-11-18 | 0.2.2-rc.4 | 构建成功，77/77 宿主补丁验证通过 |
+| 2026-11-19 | 0.2.2-rc.5 | 补丁无漂移，构建成功 |
 
 ## 12. 注意
 

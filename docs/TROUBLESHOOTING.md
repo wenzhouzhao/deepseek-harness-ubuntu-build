@@ -213,7 +213,7 @@ test -w "/opt/DeepSeek Harness/resources" && echo writable
 或直接用安装脚本（会同时 `dpkg -i` 和 `chown`）：
 
 ```sh
-bash scripts/install-deb.sh dist/deepseek-harness-0.2.2-rc.4-linux-amd64-unsigned.deb
+bash scripts/install-deb.sh dist/deepseek-harness-0.2.2-rc.5-linux-amd64-unsigned.deb
 ```
 
 注意：以后每次 `dpkg -i` 升级，被替换的文件会恢复为 root 所有，需要重新 `chown`。
