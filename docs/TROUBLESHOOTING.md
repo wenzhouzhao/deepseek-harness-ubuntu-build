@@ -300,3 +300,68 @@ bash scripts/restart-dsh.sh
 - 备份：`*.pre-0.2.2-rc.4.bak`（只创建一次）；`--revert` 还原
 - 重装/升级插件会覆盖修改，重跑脚本即可
 - 上游发布兼容 0.2.2-rc.2+ 的版本后，脚本会检测到锚点不存在并跳过
+
+---
+
+## 17. `dpkg -i` 升级后仍运行旧版本（解包宿主模式）
+
+现象：`dpkg-query` 和包内文件都是新版本，但界面/日志仍是旧版本；
+`resources/` 下同时存在新的 `app.asar` 和旧的 `app/` 目录。
+
+原因：Electron 先找 `resources/app/`，再退回 `app.asar`。只要解包目录在，
+`dpkg` 新装的 `app.asar` 就不会被加载。
+
+确认：
+
+```sh
+node -e 'console.log(require("/opt/DeepSeek Harness/resources/app/package.json").version)'
+node -e 'console.log(require("/opt/DeepSeek Harness/resources/app.asar/package.json").version)'
+```
+
+处理（用 dsh-purge 自带的解包器，保持补丁流程一致）：
+
+```sh
+# 1. 完全退出
+bash scripts/restart-dsh.sh --no-start
+
+# 2. 用新 app.asar 重建 resources/app（旧目录保留为 app.dshpurge-prev）
+node --input-type=module - <<JS
+import { extractAsarToSide, commitExtractedDir } from "$HOME/.dsh/profiles/desktop/node_modules/dsh-purge-community/lib/extract-asar.js";
+import fs from "node:fs";
+const res = "/opt/DeepSeek Harness/resources";
+const r = extractAsarToSide(res + "/app.asar", res + "/app");
+console.log("entries:", r.count);
+commitExtractedDir(res + "/app", r.next);
+console.log("now:", JSON.parse(fs.readFileSync(res + "/app/package.json", "utf8")).version);
+JS
+```
+
+`<<JS`（不带引号）会让 shell 展开 `$HOME`；若 profile 名不是 `desktop`，
+把路径里的 `desktop` 换成实际名称。
+
+3. 重新应用宿主补丁并重启：
+
+```sh
+P="$HOME/.dsh/profiles/desktop/node_modules/dsh-purge-community"
+DSH_SURFACE=desktop \
+DSH_BASE="/opt/DeepSeek Harness/resources/app/dsh/node_modules/@deepseek-ai" \
+  node "$P/bin/dsh-purge.js" --apply
+bash scripts/restart-dsh.sh
+```
+
+确认补丁无待清洗项：
+
+```sh
+P="$HOME/.dsh/profiles/desktop/node_modules/dsh-purge-community"
+DSH_SURFACE=desktop \
+DSH_BASE="/opt/DeepSeek Harness/resources/app/dsh/node_modules/@deepseek-ai" \
+  node "$P/bin/dsh-purge.js" --status | grep '补丁'
+# 期望：... 已清洗, 0 待清洗
+```
+
+`app.dshpurge-prev` 是升级前的完整旧树，确认新版稳定后可删除以释放约
+500 MB：
+
+```sh
+rm -rf "/opt/DeepSeek Harness/resources/app.dshpurge-prev"
+```
